@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+    --primary: #10b981;
+    --secondary: #f59e0b;
+    --background: #ffffff;
+    --foreground: #111827;
+    --muted-foreground: #6b7280;
+    --error: #ef4444;
+    --radius: 8px;
+    --primary-bg-1: #ecfdf5;
+    --primary-bg-2: #d1fae5;
+  
+}
+
+.secondary{
+  background-color: var(--secondary);
+}
+
+.backgound {
+  background-color: var(--background);
+}
+
+.foreground {
+  background-color: var(--foreground);
+}
+
+.muted-foreground {
+  background-color: var(--muted-foreground);
+}
+
+.radius{
+  border-radius: var(--radius);
+}
+
+.primary-bg-1 {
+  background-color: var(--primary-bg-1);
+} 
+
+.primary-bg-2 {
+  background-color: var(--primary-bg-2);
+}
+
+.primary {
+  background-color: var(--primary);
+}
+
+
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;;
+  margin: 0;
+}

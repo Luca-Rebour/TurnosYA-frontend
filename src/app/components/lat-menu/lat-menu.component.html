@@ -1,0 +1,98 @@
+<!-- HEADER -->
+<header class="flex h-16 items-center gap-4 border-b bg-white px-6">
+    <!-- Boton hamburguesa -->
+    <button
+      class="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors hover:bg-gray-100 h-10 w-10 lg:hidden"
+      type="button"
+      (click)="sidebarOpen = true"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" x2="20" y1="12" y2="12" />
+        <line x1="4" x2="20" y1="6" y2="6" />
+        <line x1="4" x2="20" y1="18" y2="18" />
+      </svg>
+      <span class="sr-only">Toggle menu</span>
+    </button>
+  
+    <!-- Logo -->
+    <div class="lg:hidden flex items-center gap-2 font-semibold">
+      <svg class="h-5 w-5 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M8 2v4" />
+        <path d="M16 2v4" />
+        <rect width="18" height="18" x="3" y="4" rx="2" />
+        <path d="M3 10h18" />
+      </svg>
+      <span>TurnosYA</span>
+    </div>
+  
+    <div class="ml-auto flex items-center gap-4">
+      <button class="hover:bg-gray-100 h-10 w-10 rounded-full transition-colors">
+        <span class="relative flex overflow-hidden rounded-full h-8 w-8">
+          <img src="/placeholder.svg" alt="User" class="aspect-square h-full w-full" />
+        </span>
+        <span class="sr-only">User menu</span>
+      </button>
+    </div>
+  </header>
+  
+  <!-- BACKDROP -->
+  <div
+    class="fixed inset-0 z-40 bg-black/50 transition-opacity lg:hidden"
+    *ngIf="sidebarOpen"
+    (click)="sidebarOpen = false"
+  ></div>
+  
+  <!-- SIDEBAR MOBILE -->
+  <aside
+    class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-md transition-transform transform lg:hidden"
+    [ngClass]="{ 'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen }"
+  >
+    <div class="p-6 flex items-center justify-between">
+      <div class="flex items-center gap-2 font-semibold text-xl">
+        <svg class="h-6 w-6 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M8 2v4" /><path d="M16 2v4" /><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" />
+        </svg>
+        <span>TurnosYA</span>
+      </div>
+      <button class="text-gray-500" (click)="sidebarOpen = false">
+        ✕
+      </button>
+    </div>
+    <nav class="px-4 py-2">
+      <ul class="space-y-1">
+        <li *ngFor="let item of navItems">
+          <button class="flex items-center w-full gap-3 px-3 py-2 rounded-md text-sm transition-colors hover:bg-emerald-50 hover:text-emerald-700 font-medium"
+                  [ngClass]="{ 'bg-emerald-50 text-emerald-700': activeItem === item.label }"
+                  (click)="setActive(item.label)">
+                  <lucide-angular [img]="item.icon" class="h-5 w-5"></lucide-angular>
+            {{ item.label }}
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </aside>
+  
+  <!-- SIDEBAR DESKTOP -->
+  <aside class="hidden lg:flex flex-col w-64 border-r bg-white">
+    <div class="p-6">
+      <div class="flex items-center gap-2 font-semibold text-xl">
+        <svg class="h-6 w-6 text-emerald-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M8 2v4" /><path d="M16 2v4" /><rect width="18" height="18" x="3" y="4" rx="2" /><path d="M3 10h18" />
+        </svg>
+        <span>TurnosYA</span>
+      </div>
+    </div>
+    <nav class="flex-1 px-4 py-2">
+      <ul class="space-y-1">
+        <li *ngFor="let item of navItems">
+          <button class="flex items-center w-full gap-3 px-3 py-2 rounded-md text-sm transition-colors hover:bg-emerald-50 hover:text-emerald-700 font-medium"
+                  [ngClass]="{ 'bg-emerald-50 text-emerald-700': activeItem === item.label }"
+                  (click)="setActive(item.label)">
+                  <lucide-angular [img]="item.icon" class="h-5 w-5"></lucide-angular>
+            {{ item.label }}
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </aside>
+  

@@ -1,0 +1,130 @@
+<div class="auth-page" [class.flipped]="mode === 'signup'">
+  <!-- Lado Izquierdo: Login / Register -->
+  <div class="auth-left">
+    <div class="auth-card">
+      <!-- Login -->
+      <div class="auth-face front">
+        <div class="logo">
+          <lucide-icon [img]="calendarIcon" [size]="64"></lucide-icon>
+          <h1>Turnos<span>YA</span></h1>
+        </div>
+        <p class="subtitle">Appointment management for professionals</p>
+
+        <form [formGroup]="loginForm" (ngSubmit)="login()" class="auth-form">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input formControlName="email" type="email" id="email" placeholder="name@example.com" />
+          </div>
+
+          <div class="form-group">
+            <label for="password">
+              Password
+              <a href="#" class="forgot">Forgot password?</a>
+            </label>
+            <input formControlName="password" type="password" id="password" />
+          </div>
+
+          <div class="form-options">
+            <label class="remember">
+              <input type="checkbox" /> Remember me for 30 days
+            </label>
+          </div>
+
+          <button type="submit" class="btn-submit">Sign in</button>
+
+          <p class="bottom-text">
+            Don’t have an account?
+            <a href="#" (click)="mode = 'signup'" class="link">Sign up</a>
+          </p>
+        </form>
+      </div>
+
+      <!-- Register -->
+      <div class="auth-face back">
+        <div class="logo">
+          <lucide-icon [img]="calendarIcon" [size]="64"></lucide-icon>
+          <h1>Turnos<span>YA</span></h1>
+        </div>
+        <p class="subtitle">Create your free account</p>
+
+        <form [formGroup]="registerForm" (ngSubmit)="signup()" class="auth-form register-form">
+            <div class="form-group">
+              <label for="name">Name</label>
+              <input formControlName="name" type="text" id="name" placeholder="John" />
+            </div>
+
+            <div class="form-group">
+              <label for="lastname">Last Name</label>
+              <input formControlName="lastName" type="text" id="lastname" placeholder="Doe" />
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Phone</label>
+              <input formControlName="phone" type="tel" id="phone" placeholder="+54 9 11 1234 5678" />
+            </div>
+
+            <div class="form-group">
+              <label for="bitrhdate">Birth date</label>
+              <input formControlName="birthDate" type="date" id="birthdate" placeholder="dd/mm/yyyy" />
+            </div>
+        
+          
+          <div class="form-group">
+            <label for="emailReg">Email</label>
+            <input formControlName="email" type="email" id="emailReg" placeholder="email@example.com" />
+          </div>
+
+          <div class="form-group">
+            <label for="passwordReg">Password</label>
+            <input formControlName="password" type="password" id="passwordReg" />
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <input formControlName="confirmPassword" type="password" id="confirmPassword" />
+          </div>
+
+          <div class="form-group">
+            <label for="role">Role</label>
+            <div class="radio-inputs" >
+              <label class="radio label-radio">
+                <input type="radio" name="role" [value]="'customer'" formControlName="role"/>
+                <span class="name">Customer</span>
+              </label>
+              <label class="radio label-radio">
+                <input type="radio" name="role" [value]="'professional'" formControlName="role"/>
+                <span class="name">Professional</span>
+              </label>
+            </div>
+          </div>
+         
+
+
+
+          <button type="submit" class="btn-submit">Create account</button>
+
+          <p class="bottom-text">
+            Already have an account?
+            <a href="#" (click)="mode = 'login'" class="link">Sign in</a>
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lado Derecho: Card -->
+  <div class="auth-right">
+    <div class="card">
+      <span>
+        <lucide-angular [img]="calendarIcon" [size]="64"></lucide-angular>
+      </span>
+      <div>
+        <h3>Streamline Your Schedule</h3>
+        <p>
+          Manage appointments, track client sessions,<br />
+          and organize your professional practice all in one place.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
