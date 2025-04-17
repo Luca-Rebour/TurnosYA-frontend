@@ -1,0 +1,13 @@
+<div class="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 p-4">
+
+
+<ng-container *ngFor="let card of cards" >
+    <div class="bg-white shadow-sm border-b rounded-lg p-4 mb-4 min-w-max">
+      <div class="flex items-center justify-between mb-2">
+        <lucide-angular [img]="card.icon" [size]="32" class="rounded-md p-1 rounded-md" [ngClass]="[card.iconBg, card.iconColor]"></lucide-angular>
+        <h2 class="text-2xl font-semibold text-gray-800">{{ card.value }}</h2>
+      </div>
+      <p class="text-sm font-medium text-gray-500 mt-2">{{ card.title }}</p>
+    </div>
+  </ng-container>
+  </div>

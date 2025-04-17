@@ -1,10 +1,19 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
-import { HomeComponent } from './components/home/home.component';
+import { DashboardComponent } from './components/professional/dashboard/dashboard.component';
 import { AuthComponent } from './components/auth/auth.component';
+import { LayoutComponent } from './components/professional/layout/layout.component';
+import { AppointmentsResolver } from './resolvers/appointment-resolver.resolver';
 
 export const routes: Routes = [
-    {path: 'auth', component: AuthComponent},
-    {path: '', redirectTo: 'home', pathMatch: 'full'},
-    {path: 'home', component: HomeComponent, canActivate: [authGuard]},
+    { path: 'auth', component: AuthComponent },
+    {
+        path: 'professional',
+        component: LayoutComponent,
+        children: [
+            { path: '', component: DashboardComponent, resolve: { appointments: AppointmentsResolver } },
+            { path: 'dashboard', component: DashboardComponent, resolve: { appointments: AppointmentsResolver }}
+        ],
+        canActivate: [authGuard] 
+    }
 ];

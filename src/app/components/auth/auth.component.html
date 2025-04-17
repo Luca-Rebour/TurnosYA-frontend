@@ -24,6 +24,8 @@
             <input formControlName="password" type="password" id="password" />
           </div>
 
+          <p class="text-rose-700 text-sm" *ngIf="errorMessage">{{errorMessage}}</p>
+
           <div class="form-options">
             <label class="remember">
               <input type="checkbox" /> Remember me for 30 days
@@ -34,7 +36,7 @@
 
           <p class="bottom-text">
             Don’t have an account?
-            <a href="#" (click)="mode = 'signup'" class="link">Sign up</a>
+            <button  (click)="mode = 'signup'" class="bg-transparent text-primary">Sign up</button>
           </p>
         </form>
       </div>
@@ -100,12 +102,12 @@
          
 
 
-
+          <p class="text-rose-700 text-sm" *ngIf="errorMessage">{{errorMessageRegister}}</p>
           <button type="submit" class="btn-submit">Create account</button>
 
           <p class="bottom-text">
             Already have an account?
-            <a href="#" (click)="mode = 'login'" class="link">Sign in</a>
+            <button type="button" (click)="mode = 'login'" class="bg-transparent text-primary">Sign in</button>
           </p>
         </form>
       </div>

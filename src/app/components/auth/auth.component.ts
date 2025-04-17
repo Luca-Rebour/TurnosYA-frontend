@@ -26,6 +26,10 @@ export class AuthComponent {
 
   loginForm: FormGroup;
   registerForm: FormGroup;
+  errorMessageRegister: string = '';
+  readonly calendarIcon = Calendar;
+  mode: 'login' | 'signup' = 'login';
+  errorMessage: string = '';
   constructor(private _authService: AuthService, private fb: FormBuilder, private router: Router) {
 
     this.loginForm = this.fb.group({
@@ -45,16 +49,14 @@ export class AuthComponent {
     });
 
   }
-  readonly calendarIcon = Calendar;
-  mode: 'login' | 'signup' = 'login';
-  errorMessage: string = '';
+ 
 
   login() {
     console.log('Login form value', this.loginForm.value);
     this._authService.login(this.loginForm.value as LoginRequest).subscribe(
       (res: AuthResponse) => {
         console.log('Login successful', res);
-        this.router.navigate(['/home']);
+        this.openDashboard();
       },
       (error) => {
         console.error('Login error', error);
@@ -71,9 +73,20 @@ export class AuthComponent {
       },
       (error) => {
         console.error('Signup error', error);
-        this.errorMessage = 'Signup error';
+        this.errorMessageRegister = 'Signup error';
       }
     );
-    this.errorMessage = 'Signup error';
+    this.errorMessageRegister = 'Signup error';
+  }
+
+  openDashboard() {
+    var role = this._authService.getUserRole();
+    if (role === 'customer') {
+      this.router.navigate(['/customer/dashboard']);
+    } else if (role === 'professional') {
+      this.router.navigate(['/professional/dashboard']);
+    } else {
+      this.errorMessage = 'Invalid role';
+    }
   }
 }

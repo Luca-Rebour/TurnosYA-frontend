@@ -1,0 +1,140 @@
+<div class="rounded-lg border bg-card text-card-foreground shadow-sm lg:col-span-4">
+    <div class="space-y-1.5 p-6 flex flex-row items-center justify-between pb-2">
+        <div>
+            <h3 class="text-2xl font-semibold leading-none tracking-tight">Upcoming Appointments</h3>
+            <p class="text-sm text-gray-500">Manage your scheduled appointments</p>
+        </div>
+        <button class="inline-flex items-center justify-center gap-2 text-sm font-medium h-9 rounded-md px-3 text-emerald-600 hover:bg-accent hover:text-accent-foreground" (click)="openSidebar()">
+            View all
+        </button>
+    </div>
+
+    <div class="p-6 pt-0">
+        <div class="w-full">
+            <div class="inline-flex h-10 items-center justify-center rounded-md bg-gray-100 p-1 mb-4">
+                <button class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-sm text-gray-500" [ngClass]="{'bg-white shadow-sm text-gray-800': activeTab === 'today'}" (click)="changeShowedAppointments('today')">
+                    Today
+                </button>
+
+                <button class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-sm text-gray-500" [ngClass]="{'bg-white shadow-sm text-gray-800 ': activeTab === 'upcoming'}" (click)="changeShowedAppointments('upcoming')">
+                    Upcoming
+                </button>
+
+                <button class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-sm text-gray-500" [ngClass]="{'bg-white shadow-sm text-gray-800 ': activeTab === 'pending'}" (click)="changeShowedAppointments('pending')">
+                    Pending
+                </button>
+
+            </div>
+
+            <div class="mt-2 space-y-4" *ngIf="showedAppointments === 'today'">
+                <div *ngFor="let appointment of upcomingAppointments"
+                    class="flex items-center justify-between p-3 rounded-lg border">
+                    <div class="flex items-center gap-3">
+                        <span class="relative flex shrink-0 overflow-hidden rounded-full h-10 w-10 p-1">
+                            <!-- <img class="aspect-square h-full w-full" alt="Maria Garcia" [src]="appointment.customer.profilePicture" /> -->
+                            <lucide-angular [img]="userIcon" class="aspect-square h-full w-full" />
+                        </span>
+                        <div>
+                            <p class="font-medium">{{appointment.customer.name}} {{appointment.customer.lastName}}</p>
+                            <p class="text-sm text-muted-foreground">Tipo de sesion</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
+                            <p class="text-sm font-medium">{{ getFormattedDate(appointment.date) }}</p>
+
+                            <p class="text-xs text-gray-500">{{ getRelativeDate(appointment.date) }}</p>
+                        </div>
+                        <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold"
+                            [ngClass]="{
+       'bg-emerald-100 text-emerald-700': appointment.status === 'Confirmed',
+       'bg-amber-100 text-amber-700': appointment.status === 'Pending',
+       'bg-red-100 text-red-700': appointment.status === 'Cancelled'
+     }">
+                            {{ appointment.status }}
+                        </div>
+
+                    </div>
+                </div>
+
+
+            </div>
+            <div class="mt-2 space-y-4" *ngIf="showedAppointments === 'upcoming'">
+                <div *ngFor="let appointment of upcomingAppointments"
+                    class="flex items-center justify-between p-3 rounded-lg border">
+                    <div class="flex items-center gap-3">
+                        <span class="relative flex shrink-0 overflow-hidden rounded-full h-10 w-10 p-1">
+                            <!-- <img class="aspect-square h-full w-full" alt="Maria Garcia" [src]="appointment.customer.profilePicture" /> -->
+                            <lucide-angular [img]="userIcon" class="aspect-square h-full w-full" />
+                        </span>
+                        <div>
+                            <p class="font-medium">{{appointment.customer.name}} {{appointment.customer.lastName}}</p>
+                            <p class="text-sm text-muted-foreground">Tipo de sesion</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
+                            <p class="text-sm font-medium">{{ getFormattedDate(appointment.date) }}</p>
+
+                            <p class="text-xs text-muted-foreground">{{ getRelativeDate(appointment.date) }}</p>
+                        </div>
+                        <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold"
+                            [ngClass]="{
+       'bg-emerald-100 text-emerald-700': appointment.status === 'Confirmed',
+       'bg-amber-100 text-amber-700': appointment.status === 'Pending',
+       'bg-red-100 text-red-700': appointment.status === 'Cancelled'
+     }">
+                            {{ appointment.status }}
+                        </div>
+
+                    </div>
+                </div>
+
+
+            </div>
+
+
+            <div class="mt-2 space-y-4" *ngIf="showedAppointments === 'pending'">
+                <div *ngFor="let appointment of pendingAppointments"
+                    class="flex items-center justify-between p-3 rounded-lg border">
+                    <div class="flex items-center gap-3">
+                        <span class="relative flex shrink-0 overflow-hidden rounded-full h-10 w-10 p-1">
+                            <!-- <img class="aspect-square h-full w-full" alt="Maria Garcia" [src]="appointment.customer.profilePicture" /> -->
+                            <lucide-angular [img]="userIcon" class="aspect-square h-full w-full" />
+                        </span>
+                        <div>
+                            <p class="font-medium">{{appointment.customer.name}} {{appointment.customer.lastName}}</p>
+                            <p class="text-sm text-muted-foreground">Tipo de sesion</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
+                            <p class="text-sm font-medium">{{ getFormattedDate(appointment.date) }}</p>
+
+                            <p class="text-xs text-muted-foreground">{{ getRelativeDate(appointment.date) }}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button
+                            class="inline-flex items-center justify-center gap-2 text-sm font-medium h-9 rounded-md px-3 bg-emerald-600 text-white hover:bg-emerald-700">
+                            Confirm
+                        </button>
+                        <button
+                            class="inline-flex items-center justify-center gap-2 text-sm font-medium h-9 rounded-md px-3 border hover:bg-accent hover:text-accent-foreground">
+                            Reschedule
+                        </button>
+                    </div>
+
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<app-sidebar
+  [isOpen]="isSidebarOpen"
+  (closed)="closeSidebar()">
+</app-sidebar>
