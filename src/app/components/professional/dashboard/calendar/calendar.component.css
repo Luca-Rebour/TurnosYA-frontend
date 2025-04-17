@@ -1,0 +1,26 @@
+.fc .fc-timegrid-slot {
+    background-color: #ffffff !important;
+  }
+  
+  .fc-theme-bootstrap5 .fc-list, .fc-theme-bootstrap5 .fc-scrollgrid, .fc-theme-bootstrap5 td, .fc-theme-bootstrap5 th {
+    border: none !important;
+  }
+
+  .fc .fc-timegrid-slot {
+    border-bottom: 1px dashed #eeeeee !important;
+}
+
+/* afecta la altura de cada fila de la grilla de horas */
+.fc .fc-timegrid-slot {
+    height: 60px !important;
+  }
+  
+.fc-timegrid-slot-label-cushion {
+    font-size: small !important;
+  }
+
+  .fc-event {
+    background-color: transparent !important;
+    border: none !important;
+  }
+  

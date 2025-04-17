@@ -5,11 +5,12 @@ import { UserService } from 'app/services/user.service';
 import { LucideAngularModule, Plus } from 'lucide-angular';
 import { UpcomingAppointmentsComponent } from './upcoming-appointments/upcoming-appointments.component';
 import { RecentActivityComponent } from './recent-activity/recent-activity.component';
+import { CalendarComponent } from './calendar/calendar.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [StatsComponent, LucideAngularModule, UpcomingAppointmentsComponent, RecentActivityComponent],
+  imports: [StatsComponent, LucideAngularModule, UpcomingAppointmentsComponent, RecentActivityComponent, CalendarComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })

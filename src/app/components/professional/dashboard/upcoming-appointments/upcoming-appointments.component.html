@@ -1,10 +1,14 @@
 <div class="rounded-lg border bg-card text-card-foreground shadow-sm lg:col-span-4">
     <div class="space-y-1.5 p-6 flex flex-row items-center justify-between pb-2">
         <div>
-            <h3 class="text-2xl font-semibold leading-none tracking-tight">Upcoming Appointments</h3>
+            <h3 class="text-2xl font-semibold leading-none tracking-tight">
+                Upcoming Appointments
+            </h3>
             <p class="text-sm text-gray-500">Manage your scheduled appointments</p>
         </div>
-        <button class="inline-flex items-center justify-center gap-2 text-sm font-medium h-9 rounded-md px-3 text-emerald-600 hover:bg-accent hover:text-accent-foreground" (click)="openSidebar()">
+        <button
+            class="inline-flex items-center justify-center gap-2 text-sm font-medium h-9 rounded-md px-3 text-emerald-600 hover:bg-accent hover:text-accent-foreground"
+            (click)="openSidebar()">
             View all
         </button>
     </div>
@@ -12,21 +16,35 @@
     <div class="p-6 pt-0">
         <div class="w-full">
             <div class="inline-flex h-10 items-center justify-center rounded-md bg-gray-100 p-1 mb-4">
-                <button class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-sm text-gray-500" [ngClass]="{'bg-white shadow-sm text-gray-800': activeTab === 'today'}" (click)="changeShowedAppointments('today')">
+                <button
+                    class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-sm text-gray-500"
+                    [ngClass]="{
+            'bg-white shadow-sm text-gray-800': activeTab === 'today'
+          }" (click)="changeShowedAppointments('today')">
                     Today
                 </button>
 
-                <button class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-sm text-gray-500" [ngClass]="{'bg-white shadow-sm text-gray-800 ': activeTab === 'upcoming'}" (click)="changeShowedAppointments('upcoming')">
+                <button
+                    class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-sm text-gray-500"
+                    [ngClass]="{
+            'bg-white shadow-sm text-gray-800 ': activeTab === 'upcoming'
+          }" (click)="changeShowedAppointments('upcoming')">
                     Upcoming
                 </button>
 
-                <button class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-sm text-gray-500" [ngClass]="{'bg-white shadow-sm text-gray-800 ': activeTab === 'pending'}" (click)="changeShowedAppointments('pending')">
+                <button
+                    class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-sm text-gray-500"
+                    [ngClass]="{
+            'bg-white shadow-sm text-gray-800 ': activeTab === 'pending'
+          }" (click)="changeShowedAppointments('pending')">
                     Pending
                 </button>
-
             </div>
 
             <div class="mt-2 space-y-4" *ngIf="showedAppointments === 'today'">
+                <p *ngIf="upcomingAppointments.length == 0" class="flex justify-center text-gray-500 text-lg">
+                    There are no appointments today
+                </p>
                 <div *ngFor="let appointment of upcomingAppointments"
                     class="flex items-center justify-between p-3 rounded-lg border">
                     <div class="flex items-center gap-3">
@@ -35,31 +53,39 @@
                             <lucide-angular [img]="userIcon" class="aspect-square h-full w-full" />
                         </span>
                         <div>
-                            <p class="font-medium">{{appointment.customer.name}} {{appointment.customer.lastName}}</p>
+                            <p class="font-medium">
+                                {{ appointment.customer.name }}
+                                {{ appointment.customer.lastName }}
+                            </p>
                             <p class="text-sm text-muted-foreground">Tipo de sesion</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-4">
                         <div class="text-right">
-                            <p class="text-sm font-medium">{{ getFormattedDate(appointment.date) }}</p>
+                            <p class="text-sm font-medium">
+                                {{ getFormattedDate(appointment.date) }}
+                            </p>
 
-                            <p class="text-xs text-gray-500">{{ getRelativeDate(appointment.date) }}</p>
+                            <p class="text-xs text-gray-500">
+                                {{ getRelativeDate(appointment.date) }}
+                            </p>
                         </div>
                         <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold"
                             [ngClass]="{
-       'bg-emerald-100 text-emerald-700': appointment.status === 'Confirmed',
-       'bg-amber-100 text-amber-700': appointment.status === 'Pending',
-       'bg-red-100 text-red-700': appointment.status === 'Cancelled'
-     }">
+                'bg-emerald-100 text-emerald-700':
+                  appointment.status === 'Confirmed',
+                'bg-amber-100 text-amber-700': appointment.status === 'Pending',
+                'bg-red-100 text-red-700': appointment.status === 'Cancelled'
+              }">
                             {{ appointment.status }}
                         </div>
-
                     </div>
                 </div>
-
-
             </div>
             <div class="mt-2 space-y-4" *ngIf="showedAppointments === 'upcoming'">
+                <p *ngIf="upcomingAppointments.length == 0" class="flex justify-center text-gray-500 text-lg">
+                    There are no upcoming appointments
+                </p>
                 <div *ngFor="let appointment of upcomingAppointments"
                     class="flex items-center justify-between p-3 rounded-lg border">
                     <div class="flex items-center gap-3">
@@ -68,33 +94,40 @@
                             <lucide-angular [img]="userIcon" class="aspect-square h-full w-full" />
                         </span>
                         <div>
-                            <p class="font-medium">{{appointment.customer.name}} {{appointment.customer.lastName}}</p>
+                            <p class="font-medium">
+                                {{ appointment.customer.name }}
+                                {{ appointment.customer.lastName }}
+                            </p>
                             <p class="text-sm text-muted-foreground">Tipo de sesion</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-4">
                         <div class="text-right">
-                            <p class="text-sm font-medium">{{ getFormattedDate(appointment.date) }}</p>
+                            <p class="text-sm font-medium">
+                                {{ getFormattedDate(appointment.date) }}
+                            </p>
 
-                            <p class="text-xs text-muted-foreground">{{ getRelativeDate(appointment.date) }}</p>
+                            <p class="text-xs text-muted-foreground">
+                                {{ getRelativeDate(appointment.date) }}
+                            </p>
                         </div>
                         <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold"
                             [ngClass]="{
-       'bg-emerald-100 text-emerald-700': appointment.status === 'Confirmed',
-       'bg-amber-100 text-amber-700': appointment.status === 'Pending',
-       'bg-red-100 text-red-700': appointment.status === 'Cancelled'
-     }">
+                'bg-emerald-100 text-emerald-700':
+                  appointment.status === 'Confirmed',
+                'bg-amber-100 text-amber-700': appointment.status === 'Pending',
+                'bg-red-100 text-red-700': appointment.status === 'Cancelled'
+              }">
                             {{ appointment.status }}
                         </div>
-
                     </div>
                 </div>
-
-
             </div>
 
-
             <div class="mt-2 space-y-4" *ngIf="showedAppointments === 'pending'">
+                <p *ngIf="pendingAppointments.length == 0" class="flex justify-center text-gray-500 text-lg">
+                    There are no pending appointments
+                </p>
                 <div *ngFor="let appointment of pendingAppointments"
                     class="flex items-center justify-between p-3 rounded-lg border">
                     <div class="flex items-center gap-3">
@@ -103,20 +136,28 @@
                             <lucide-angular [img]="userIcon" class="aspect-square h-full w-full" />
                         </span>
                         <div>
-                            <p class="font-medium">{{appointment.customer.name}} {{appointment.customer.lastName}}</p>
+                            <p class="font-medium">
+                                {{ appointment.customer.name }}
+                                {{ appointment.customer.lastName }}
+                            </p>
                             <p class="text-sm text-muted-foreground">Tipo de sesion</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-4">
                         <div class="text-right">
-                            <p class="text-sm font-medium">{{ getFormattedDate(appointment.date) }}</p>
+                            <p class="text-sm font-medium">
+                                {{ getFormattedDate(appointment.date) }}
+                            </p>
 
-                            <p class="text-xs text-muted-foreground">{{ getRelativeDate(appointment.date) }}</p>
+                            <p class="text-xs text-muted-foreground">
+                                {{ getRelativeDate(appointment.date) }}
+                            </p>
                         </div>
                     </div>
                     <div class="flex gap-2">
                         <button
-                            class="inline-flex items-center justify-center gap-2 text-sm font-medium h-9 rounded-md px-3 bg-emerald-600 text-white hover:bg-emerald-700">
+                            class="inline-flex items-center justify-center gap-2 text-sm font-medium h-9 rounded-md px-3 bg-emerald-600 text-white hover:bg-emerald-700"
+                            (click)="openModal(appointment.id)">
                             Confirm
                         </button>
                         <button
@@ -124,17 +165,36 @@
                             Reschedule
                         </button>
                     </div>
-
                 </div>
-
-
             </div>
         </div>
     </div>
 </div>
 
 
-<app-sidebar
-  [isOpen]="isSidebarOpen"
-  (closed)="closeSidebar()">
-</app-sidebar>
+
+<!-- MODAL PARA CONFIRMAR APPOINTMENT -->
+<div *ngIf="isModalOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white w-full max-w-md p-6 rounded-lg shadow-lg relative">
+        <button (click)="closeModal()" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl">
+            &times;
+        </button>
+
+        <!-- Contenido del modal -->
+        <h2 class="text-lg font-bold mb-4">Confirm appointment?</h2>
+        <p class="mb-4">Are you sure you want to confirm this appointment?</p>
+        <div class="flex justify-end">
+            <button (click)="confirmAppointment()"
+                class="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 mr-2">
+                Confirm
+            </button>
+
+            <button (click)="closeModal()" class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<app-sidebar [isOpen]="isSidebarOpen" (closed)="closeSidebar()"> </app-sidebar>

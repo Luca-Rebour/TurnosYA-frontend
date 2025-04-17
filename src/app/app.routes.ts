@@ -7,6 +7,7 @@ import { AppointmentsResolver } from './resolvers/appointment-resolver.resolver'
 
 export const routes: Routes = [
     { path: 'auth', component: AuthComponent },
+    { path: '', redirectTo: 'professional', pathMatch: 'full' },
     {
         path: 'professional',
         component: LayoutComponent,

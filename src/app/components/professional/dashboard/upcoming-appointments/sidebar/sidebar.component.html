@@ -27,13 +27,23 @@
       </p>
       
 
-      <!-- Cards -->
+      <!-- Appointments -->
       <div class="mt-4 px-4 h-full overflow-auto">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div *ngFor="let card of [1,2,3,4,5,6,7,8,9,10,11,12]"
-            class="bg-gray-50 hover:bg-gray-100 p-4 cursor-pointer rounded-md border border-gray-300 transition-colors duration-300">
-            <h3 class="text-lg font-semibold text-black mb-2">Card {{ card }}</h3>
-            <p class="text-gray-600">Content for card {{ card }}.</p>
+        <div class="">
+          <div *ngFor="let appointment of monthAppointments"
+            class="border-t border-gray-200 pt-4 pb-4 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-black mb-2">{{appointment.customer.name}}</h3>
+            <div class="flex items-center gap-4">
+              <div class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold"
+                [ngClass]="{
+                  'bg-emerald-100 text-emerald-700': appointment.status === 'Confirmed',
+                  'bg-amber-100 text-amber-700': appointment.status === 'Pending',
+                  'bg-red-100 text-red-700': appointment.status === 'Canceled'
+                }">
+                {{ appointment.status }}
+              </div>
+              <p class="text-xs text-gray-500">{{ getFormattedDate(appointment.date) }}</p>
+            </div>
           </div>
         </div>
       </div>

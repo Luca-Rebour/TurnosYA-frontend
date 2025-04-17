@@ -79,14 +79,14 @@ export class StatsComponent {
 
   updateTodayAppointments() {
     this.todayAppointments = this.appointments.filter(appointment =>
-      isToday(appointment.date)
+      isToday(appointment.date) && appointment.status.toLowerCase() !== 'canceled'
     );
   }
   
 
   updateThisWeekAppointments() {
     this.thisWeekAppointments = this.appointments.filter(appointment =>
-      isThisWeek(appointment.date)
+      isThisWeek(appointment.date) && appointment.status.toLowerCase() !== 'canceled'
     );
   }
 
