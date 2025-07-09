@@ -81,11 +81,12 @@ export class AuthComponent {
 
   openDashboard() {
     var role = this._authService.getUserRole();
-    if (role === 'customer') {
+    if (role?.toLocaleLowerCase() === 'customer') {
       this.router.navigate(['/customer/dashboard']);
-    } else if (role === 'professional') {
+    } else if (role?.toLocaleLowerCase() === 'professional') {
       this.router.navigate(['/professional/dashboard']);
     } else {
+      console.log('Invalid role:', role);
       this.errorMessage = 'Invalid role';
     }
   }

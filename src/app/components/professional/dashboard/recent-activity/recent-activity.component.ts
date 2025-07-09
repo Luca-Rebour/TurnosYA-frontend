@@ -1,4 +1,4 @@
-import { NgClass, NgFor } from '@angular/common';
+import { NgClass, NgFor, NgIf } from '@angular/common';
 import { Component } from '@angular/core';
 import { activity } from 'app/models/activity.model';
 import { ActivitiesService } from 'app/services/activities.service';
@@ -6,7 +6,7 @@ import { ActivitiesService } from 'app/services/activities.service';
 @Component({
   selector: 'app-recent-activity',
   standalone: true,
-  imports: [NgClass, NgFor],
+  imports: [NgClass, NgFor, NgIf],
   templateUrl: './recent-activity.component.html',
   styleUrl: './recent-activity.component.css'
 })
