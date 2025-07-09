@@ -4,7 +4,8 @@
         <p class="text-muted-foreground">Here's what's happening with your practice today.</p>
     </div>
     <div class="flex flex-row items-center gap-2 flex-wrap">
-        <button
+        <button 
+            (click)="openCreateAppointmentModal()"
             class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 text-primary-foreground h-10 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white">
             <lucide-angular [img]="plusIcon" [size]="16" class="" /> New Appointment</button>
         <button

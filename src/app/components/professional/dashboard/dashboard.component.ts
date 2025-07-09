@@ -6,6 +6,8 @@ import { LucideAngularModule, Plus } from 'lucide-angular';
 import { UpcomingAppointmentsComponent } from './upcoming-appointments/upcoming-appointments.component';
 import { RecentActivityComponent } from './recent-activity/recent-activity.component';
 import { CalendarComponent } from './calendar/calendar.component';
+import { CreateAppointmentComponent } from './create-appointment/create-appointment.component';
+import { ModalService } from 'app/services/modal.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -16,12 +18,16 @@ import { CalendarComponent } from './calendar/calendar.component';
 })
 export class DashboardComponent {
   readonly plusIcon = Plus;
-  constructor(private _authService: AuthService, private _userService: UserService) { }
+  constructor(private _authService: AuthService, private _userService: UserService, private modalService: ModalService) { }
   name: string = '';
 
   ngOnInit(): void {
     this.name = this._userService.getUserName() || 'User';
     
+  }
+
+  openCreateAppointmentModal() {
+    this.modalService.open(CreateAppointmentComponent, 'Create Appointment');
   }
 
 }
