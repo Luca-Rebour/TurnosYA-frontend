@@ -1,0 +1,22 @@
+<div class="flex flex-col lg:flex-row h-screen w-full">
+    <div class="flex flex-col justify-center items-center p-8 md:p-12 lg:w-1/2 bg-white h-full">
+        <div class="flex flex-col items-center mb-8 w-2/3">
+        <div class="flex flex-col items-center justify-center w-full max-w-xl">
+            <div class="mb-10 ">
+                <app-logo />
+            </div>
+            <p class="text-gray-400">Appointment management for professionals.</p>
+        </div>
+        <ng-container *ngIf="showLogIn">
+            <app-sign-in class="w-full" />
+        </ng-container>
+        <ng-container *ngIf="!showLogIn">
+            <app-sign-up class="w-full" />
+        </ng-container>
+    </div>
+    </div>
+
+<div class="hidden lg:flex lg:w-1/2 bg-emerald-50 flex-col justify-center items-center p-12">
+    <app-carousel />
+</div>
+</div>

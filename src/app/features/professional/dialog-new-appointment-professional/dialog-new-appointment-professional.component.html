@@ -1,0 +1,89 @@
+<div class="p-6 space-y-4">
+    <h1 class="text-xl font-semibold mb-4">New Appointment</h1>
+
+    <form [formGroup]="appointmentForm" (ngSubmit)="onSubmit()" class="space-y-4">
+
+        <label class="block font-medium">Client Type</label>
+        <div class="flex items-center gap-4">
+            <!-- Registered Client -->
+            <label class="flex items-center gap-2">
+                <input type="radio" formControlName="isExternal" [value]="false" />
+                <span>Registered Client</span>
+                <lucide-icon [img]="CircleQuestionMark" class="w-5 h-5 text-gray-500"
+                    matTooltip="Registered or previously attended clients" />
+            </label>
+
+            <!-- External Client -->
+            <label class="flex items-center gap-2">
+                <input type="radio" formControlName="isExternal" [value]="true" />
+                <span>External Client</span>
+                <lucide-icon [img]="CircleQuestionMark" class="w-5 h-5 text-gray-500"
+                    matTooltip="New external client, not registered" />
+
+            </label>
+        </div>
+
+
+        <div *ngIf="!appointmentForm.get('isExternal')?.value" class="space-y-2">
+            <div [formGroup]="appointmentForm" class="space-y-2 relative">
+                <label class="block text-sm font-medium">Search Client</label>
+
+                <!-- Input de búsqueda -->
+                <input type="text" [formControl]="clientSearchControl" placeholder="Escribí para buscar..."
+                    class="w-full border rounded px-3 py-2" (focus)="showSuggestions = true"
+                    (blur)="hideSuggestions()" />
+
+                <!-- Sugerencias -->
+                <ul *ngIf="showSuggestions && filteredCustomers.length > 0"
+                    class="absolute z-10 w-full border bg-white rounded mt-1 max-h-48 overflow-auto">
+                    <li *ngFor="let client of filteredCustomers" (mousedown)="selectClient(client)"
+                        class="px-3 py-2 hover:bg-gray-100 cursor-pointer">
+                        {{ client.name }} {{ client.lastName }} ({{ client.email }})
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div *ngIf="appointmentForm.get('isExternal')?.value" class="space-y-2">
+            <label class="block text-sm font-medium">Name</label>
+            <input type="text" formControlName="externalName" class="w-full border rounded px-3 py-2" />
+
+            <label class="block text-sm font-medium">Last Name</label>
+            <input type="text" formControlName="externalLastName" class="w-full border rounded px-3 py-2" />
+
+            <label class="block text-sm font-medium">Email</label>
+            <input type="email" formControlName="externalEmail" class="w-full border rounded px-3 py-2" />
+
+            <label class="block text-sm font-medium">Phone</label>
+            <input type="tel" formControlName="externalPhone" class="w-full border rounded px-3 py-2" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium">Date</label>
+                <input type="date" formControlName="date"
+                    class="w-full border rounded px-3 py-2 hover:cursor-pointer" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium">Time</label>
+                <input type="time" formControlName="time"
+                    class="w-full border rounded px-3 py-2 hover:cursor-pointer" />
+            </div>
+        </div>
+
+        <label class="block text-sm font-medium">Reason</label>
+        <textarea formControlName="reason" rows="3" class="w-full border rounded px-3 py-2"></textarea>
+
+        <div class="flex justify-end gap-4 pt-4">
+            <button type="button" (click)="onCancel()" class="px-4 py-2 border rounded hover:bg-gray-100">
+                Cancel
+            </button>
+            <button type="submit" [disabled]="appointmentForm.invalid"
+                class="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 hover:cursor-pointer">
+                Save
+            </button>
+        </div>
+
+    </form>
+</div>
