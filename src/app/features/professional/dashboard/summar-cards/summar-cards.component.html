@@ -1,0 +1,15 @@
+<div class="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+    <ng-container *ngFor="let card of summaryCards">
+        <div class="flex flex-col items-start p-6 bg-white shadow rounded-lg mb-4 space-y-5">
+            <div class="flex flex-row items-center justify-between w-full">
+                <lucide-icon [img]="card.icon" class="w-12 h-12 {{ card.iconColor }} {{ card.iconBg }} rounded-md p-2"></lucide-icon>
+
+            <span class="ml-2 text-2xl font-semibold">{{ card.value }}</span>
+        </div>
+            <div class="text-gray-500">{{ card.title }}</div>
+        </div>
+        
+    </ng-container>
+
+</div>
