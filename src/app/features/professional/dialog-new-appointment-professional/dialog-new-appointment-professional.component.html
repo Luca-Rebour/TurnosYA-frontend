@@ -1,89 +1,248 @@
-<div class="p-6 space-y-4">
-    <h1 class="text-xl font-semibold mb-4">New Appointment</h1>
+<div class="p-8 space-y-6 h-full overflow-y-auto bg-white rounded-2xl shadow-md">
+  <!-- Header -->
+  <div>
+    <div class="flex items-center gap-3 mb-2">
+      <lucide-icon [img]="Calendar" class="w-8 h-8 text-emerald-600" />
+      <h1 class="text-2xl font-bold text-gray-800 m-0">Schedule New Appointment</h1>
+    </div>
+    <p class="text-gray-600 m-0">Create a new appointment for an existing client or add a new client to your practice.</p>
+  </div>
 
-    <form [formGroup]="appointmentForm" (ngSubmit)="onSubmit()" class="space-y-4">
+  <!-- Loading Indicator -->
+  <div *ngIf="isLoading" class="text-center py-4">
+    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+    <p class="text-gray-600 mt-2">Creating appointment...</p>
+  </div>
 
-        <label class="block font-medium">Client Type</label>
-        <div class="flex items-center gap-4">
-            <!-- Registered Client -->
-            <label class="flex items-center gap-2">
-                <input type="radio" formControlName="isExternal" [value]="false" />
-                <span>Registered Client</span>
-                <lucide-icon [img]="CircleQuestionMark" class="w-5 h-5 text-gray-500"
-                    matTooltip="Registered or previously attended clients" />
-            </label>
+  <!-- Form -->
+  <form [formGroup]="appointmentForm" (ngSubmit)="onSubmit()" class="space-y-8" [class.opacity-50]="isLoading">
+    <!-- Client Type -->
+    <div class="space-y-3">
+      <label class="block text-lg font-semibold text-gray-700">Client Type</label>
+      <div class="flex items-center gap-1 w-full bg-gray-100 py-1 px-1 rounded-lg">
+        <button 
+          type="button"
+          class="py-2 px-4 rounded-md w-1/2 transition-all duration-200 font-medium"
+          [class.bg-white]="!isExternalClient"
+          [class.shadow-sm]="!isExternalClient"
+          [class.text-gray-900]="!isExternalClient"
+          [class.text-gray-600]="isExternalClient"
+          [class.hover:text-gray-800]="isExternalClient"
+          (click)="setClientType(false)"
+          [disabled]="isLoading">
+          Registered Client
+        </button>
+        <button 
+          type="button"
+          class="py-2 px-4 rounded-md w-1/2 transition-all duration-200 font-medium"
+          [class.bg-white]="isExternalClient"
+          [class.shadow-sm]="isExternalClient"
+          [class.text-gray-900]="isExternalClient"
+          [class.text-gray-600]="!isExternalClient"
+          [class.hover:text-gray-800]="!isExternalClient"
+          (click)="setClientType(true)"
+          [disabled]="isLoading">
+          New Client
+        </button>
+      </div>
+    </div>
 
-            <!-- External Client -->
-            <label class="flex items-center gap-2">
-                <input type="radio" formControlName="isExternal" [value]="true" />
-                <span>External Client</span>
-                <lucide-icon [img]="CircleQuestionMark" class="w-5 h-5 text-gray-500"
-                    matTooltip="New external client, not registered" />
+    <!-- Registered Client Search -->
+    <div *ngIf="!isExternalClient" class="space-y-4">
+      <label class="block text-sm font-medium text-gray-700">Search Client</label>
+      <div class="relative">
+        <input 
+          type="text" 
+          [formControl]="clientSearchControl" 
+          placeholder="Type client name, email, or phone..."
+          class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+          (focus)="showSuggestions = true" 
+          (blur)="hideSuggestions()"
+          [disabled]="isLoading" />
 
-            </label>
+        <ul *ngIf="showSuggestions && filteredClients.length > 0"
+          class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg max-h-48 overflow-auto">
+          <li *ngFor="let client of filteredClients" 
+            (mousedown)="selectClient(client)"
+            class="px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm text-gray-800 border-b border-gray-100 last:border-b-0">
+            <div class="font-medium">{{ client.name }} {{ client.lastName }}</div>
+            <div class="text-gray-500 text-xs">{{ client.email }}</div>
+          </li>
+        </ul>
+
+        <div *ngIf="showSuggestions && filteredClients.length === 0 && clientSearchControl.value"
+          class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg p-4 text-center text-gray-500">
+          No clients found matching your search.
+        </div>
+      </div>
+    </div>
+
+    <!-- External Client Form -->
+    <div *ngIf="isExternalClient" class="space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-gray-700">
+            First Name <span class="text-red-500">*</span>
+          </label>
+          <input 
+            type="text" 
+            formControlName="externalName"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+            [class.border-red-300]="getFieldError('externalName')"
+            [disabled]="isLoading" />
+          <div *ngIf="getFieldError('externalName')" class="text-red-500 text-sm">
+            {{ getFieldError('externalName') }}
+          </div>
         </div>
 
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-gray-700">
+            Last Name <span class="text-red-500">*</span>
+          </label>
+          <input 
+            type="text" 
+            formControlName="externalLastName"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+            [class.border-red-300]="getFieldError('externalLastName')"
+            [disabled]="isLoading" />
+          <div *ngIf="getFieldError('externalLastName')" class="text-red-500 text-sm">
+            {{ getFieldError('externalLastName') }}
+          </div>
+        </div>
+      </div>
 
-        <div *ngIf="!appointmentForm.get('isExternal')?.value" class="space-y-2">
-            <div [formGroup]="appointmentForm" class="space-y-2 relative">
-                <label class="block text-sm font-medium">Search Client</label>
-
-                <!-- Input de búsqueda -->
-                <input type="text" [formControl]="clientSearchControl" placeholder="Escribí para buscar..."
-                    class="w-full border rounded px-3 py-2" (focus)="showSuggestions = true"
-                    (blur)="hideSuggestions()" />
-
-                <!-- Sugerencias -->
-                <ul *ngIf="showSuggestions && filteredCustomers.length > 0"
-                    class="absolute z-10 w-full border bg-white rounded mt-1 max-h-48 overflow-auto">
-                    <li *ngFor="let client of filteredCustomers" (mousedown)="selectClient(client)"
-                        class="px-3 py-2 hover:bg-gray-100 cursor-pointer">
-                        {{ client.name }} {{ client.lastName }} ({{ client.email }})
-                    </li>
-                </ul>
-            </div>
-
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-gray-700">
+            Email <span class="text-red-500">*</span>
+          </label>
+          <input 
+            type="email" 
+            formControlName="externalEmail"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+            [class.border-red-300]="getFieldError('externalEmail')"
+            [disabled]="isLoading" />
+          <div *ngIf="getFieldError('externalEmail')" class="text-red-500 text-sm">
+            {{ getFieldError('externalEmail') }}
+          </div>
         </div>
 
-        <div *ngIf="appointmentForm.get('isExternal')?.value" class="space-y-2">
-            <label class="block text-sm font-medium">Name</label>
-            <input type="text" formControlName="externalName" class="w-full border rounded px-3 py-2" />
-
-            <label class="block text-sm font-medium">Last Name</label>
-            <input type="text" formControlName="externalLastName" class="w-full border rounded px-3 py-2" />
-
-            <label class="block text-sm font-medium">Email</label>
-            <input type="email" formControlName="externalEmail" class="w-full border rounded px-3 py-2" />
-
-            <label class="block text-sm font-medium">Phone</label>
-            <input type="tel" formControlName="externalPhone" class="w-full border rounded px-3 py-2" />
+        <div class="space-y-2">
+          <label class="block text-sm font-medium text-gray-700">
+            Phone <span class="text-red-500">*</span>
+          </label>
+          <input 
+            type="tel" 
+            formControlName="externalPhone"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+            [class.border-red-300]="getFieldError('externalPhone')"
+            [disabled]="isLoading" />
+          <div *ngIf="getFieldError('externalPhone')" class="text-red-500 text-sm">
+            {{ getFieldError('externalPhone') }}
+          </div>
         </div>
+      </div>
+    </div>
 
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium">Date</label>
-                <input type="date" formControlName="date"
-                    class="w-full border rounded px-3 py-2 hover:cursor-pointer" />
-            </div>
-            <div>
-                <label class="block text-sm font-medium">Time</label>
-                <input type="time" formControlName="time"
-                    class="w-full border rounded px-3 py-2 hover:cursor-pointer" />
-            </div>
+    <!-- Date Selection -->
+    <div class="space-y-2">
+      <label class="block text-sm font-medium text-gray-700">
+        Select Date <span class="text-red-500">*</span>
+      </label>
+      <input 
+        type="date" 
+        formControlName="date"
+        [min]="minDate"
+        class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 hover:cursor-pointer transition-colors"
+        [class.border-red-300]="getFieldError('date')"
+        [disabled]="isLoading" />
+      <div *ngIf="getFieldError('date')" class="text-red-500 text-sm">
+        {{ getFieldError('date') }}
+      </div>
+    </div>
+
+    <!-- Available Time Slots -->
+    <div *ngIf="appointmentForm.get('date')?.value" class="space-y-4">
+      <div class="flex items-center justify-between">
+        <label class="block text-sm font-medium text-gray-700">
+          Available Time Slots <span class="text-red-500">*</span>
+        </label>
+        <div *ngIf="isLoadingSlots" class="flex items-center text-sm text-gray-500">
+          <div class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-emerald-600 mr-2"></div>
+          Loading slots...
         </div>
+      </div>
 
-        <label class="block text-sm font-medium">Reason</label>
-        <textarea formControlName="reason" rows="3" class="w-full border rounded px-3 py-2"></textarea>
+      <div *ngIf="!isLoadingSlots && availableTimeSlots.length > 0" 
+           class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-60 overflow-y-auto">
+        <button
+          type="button"
+          *ngFor="let slot of availableTimeSlots"
+          (click)="selectTimeSlot(slot)"
+          class="p-3 rounded-lg border text-sm font-medium transition-all duration-200"
+          [class.bg-emerald-600]="selectedTimeSlot?.id === slot.id"
+          [class.text-white]="selectedTimeSlot?.id === slot.id"
+          [class.border-emerald-600]="selectedTimeSlot?.id === slot.id"
+          [class.bg-white]="selectedTimeSlot?.id !== slot.id"
+          [class.text-gray-700]="selectedTimeSlot?.id !== slot.id"
+          [class.border-gray-300]="selectedTimeSlot?.id !== slot.id"
+          [class.hover:border-emerald-500]="selectedTimeSlot?.id !== slot.id"
+          [class.hover:text-emerald-600]="selectedTimeSlot?.id !== slot.id"
+          [disabled]="isLoading">
+          {{ formatTimeSlot(slot) }}
+        </button>
+      </div>
 
-        <div class="flex justify-end gap-4 pt-4">
-            <button type="button" (click)="onCancel()" class="px-4 py-2 border rounded hover:bg-gray-100">
-                Cancel
-            </button>
-            <button type="submit" [disabled]="appointmentForm.invalid"
-                class="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 hover:cursor-pointer">
-                Save
-            </button>
+      <div *ngIf="!isLoadingSlots && availableTimeSlots.length === 0 && appointmentForm.get('date')?.value" 
+           class="text-center py-8 text-gray-500">
+        <div class="text-lg mb-2">📅</div>
+        <p>No available time slots for this date</p>
+        <p class="text-sm mt-1">Please select a different date</p>
+      </div>
+
+      <div *ngIf="!selectedTimeSlot && appointmentForm.get('date')?.value && !isLoadingSlots && availableTimeSlots.length > 0" 
+           class="text-sm text-gray-500 text-center">
+        Please select a time slot to continue
+      </div>
+    </div>
+
+    <!-- Reason -->
+    <div class="space-y-2">
+      <label class="block text-sm font-medium text-gray-700">Reason (Optional)</label>
+      <textarea 
+        formControlName="reason" 
+        rows="3"
+        placeholder="Describe the reason for this appointment..."
+        class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none transition-colors"
+        [disabled]="isLoading">
+      </textarea>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="error" class="bg-red-50 border border-red-200 rounded-lg p-4">
+      <div class="flex items-center">
+        <div class="text-red-600 text-sm">
+          {{ error }}
         </div>
+      </div>
+    </div>
 
-    </form>
+    <!-- Buttons -->
+    <div class="flex justify-end gap-4 pt-6 border-t border-gray-200">
+      <button 
+        type="button" 
+        (click)="onCancel()"
+        class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+        [disabled]="isLoading">
+        Cancel
+      </button>
+      <button 
+        type="submit" 
+        [disabled]="!isFormValid || isLoading"
+        class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium">
+        <span *ngIf="!isLoading">Create Appointment</span>
+        <span *ngIf="isLoading">Creating...</span>
+      </button>
+    </div>
+  </form>
 </div>
