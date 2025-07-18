@@ -2,18 +2,17 @@ import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { CreateExternalCustomer } from '../../shared/models/create-external-customer.model';
+import { CreateExternalClient } from '../../shared/models/create-external-client.model';
 
 @Injectable({
   providedIn: 'root'
 })
-export class ExternalCustomerService {
+export class ExternalClientService {
   private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) { }
 
-  createExternalCustomer(customerData: CreateExternalCustomer): Observable<any> {
-
-    return this.http.post(`${this.apiUrl}/external-customers`, customerData);
+  createExternalClient(clientData: CreateExternalClient): Observable<any> {
+    return this.http.post(`${this.apiUrl}/external-clients`, clientData);
   }
 }

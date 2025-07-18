@@ -1,18 +1,18 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { ClientGeneric } from '../../shared/models/client-generic.model';
 
 @Injectable({
   providedIn: 'root'
 })
-export class ProfessionalService {
+export class AvailabilityService {
+
   private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) { }
 
-  getAllClients(): Observable<ClientGeneric[]> {
-    return this.http.get<ClientGeneric[]>(`${this.apiUrl}/professionals/clients`);
+  getAvailableSlots(professionalId: string, date: string) {
+    return this.http.get(`${this.apiUrl}/availability/${professionalId}/${date}`);
   }
+
 }

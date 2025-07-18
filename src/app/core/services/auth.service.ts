@@ -19,6 +19,7 @@ export class AuthService {
         localStorage.setItem('token', response.token);
         localStorage.setItem('userId', response.userId.toString());
         localStorage.setItem('userRole', response.role);
+        
       }),
       catchError((error: HttpErrorResponse) => {
         let message = 'An unknown error occurred.';
