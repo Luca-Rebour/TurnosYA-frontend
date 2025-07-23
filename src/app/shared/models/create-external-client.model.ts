@@ -3,4 +3,5 @@ export interface CreateExternalClient {
   lastName: string;
   email: string;
   phone: string;
+  createdByProfessionalId: string;
 }

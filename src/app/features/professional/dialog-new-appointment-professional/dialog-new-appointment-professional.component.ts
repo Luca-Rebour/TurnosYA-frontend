@@ -40,487 +40,613 @@ import { TimeSlot } from '../../../shared/models/time-slot.model';
   templateUrl: './dialog-new-appointment-professional.component.html',
   styleUrl: './dialog-new-appointment-professional.component.scss',
 })
-export class DialogNewAppointmentProfessionalComponent implements OnInit, OnDestroy {
-  appointmentForm!: FormGroup;
-  readonly CircleQuestionMark = CircleQuestionMark;
+export class DialogNewAppointmentProfessionalComponent implements OnInit {
   readonly Calendar = Calendar;
 
-  // Client properties
-  foundClient: any = null;
-  searchFailed = false;
-  registeredClients: ClientGeneric[] = [];
-  filteredClients: ClientGeneric[] = [];
-  clientSearchControl = new FormControl('');
-  showSuggestions = false;
+  // Listas de clientes
+  internalClients: ClientGeneric[] = [];
+  externalClients: ClientGeneric[] = [];
+  filteredInternalClients: ClientGeneric[] = [];
+  filteredExternalClients: ClientGeneric[] = [];
   
-  // Available time slots
-  availableTimeSlots: any[] = [];
-  selectedTimeSlot: any = null;
-  isLoadingSlots = false;
-  
-  // UI state
-  error: string | null = null;
-  isLoading = false;
-  
-  // Subscription management
-  private destroy$ = new Subject<void>();
+  // IDs de clientes seleccionados
+  selectedInternalClientId: string | null = null;
+  selectedExternalClientId: string | null = null;
+
+  // Time slots
+  availableTimeSlots: TimeSlot[] = [];
+  selectedTimeSlot: TimeSlot | null = null;
+  loadingTimeSlots = false;
+
+  // Focus tracking for dropdowns
+  internalSearchFocused = false;
+  externalSearchFocused = false;
+
+  // Error messages
+  errorMessage = '';
+  showError = false;
 
   constructor(
-    private fb: FormBuilder,
-    private dialogRef: MatDialogRef<DialogNewAppointmentProfessionalComponent>,
+    public dialogRef: MatDialogRef<DialogNewAppointmentProfessionalComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any,
-    private _externalClientService: ExternalClientService,
-    private _externalAppointmentService: ExternalAppointmentService,
-    private _professionalService: ProfessionalService,
-    private _internalAppointmentService: InternalAppointmentService,
-    private _timeSlotsService: TimeSlotsService,
-    private _userContextService: UserContextService
-  ) { }
+    private formBuilder: FormBuilder,
+    private externalClientService: ExternalClientService,
+    private externalAppointmentService: ExternalAppointmentService,
+    private professionalService: ProfessionalService,
+    private internalAppointmentService: InternalAppointmentService,
+    private timeSlotsService: TimeSlotsService,
+    private userContextService: UserContextService
+  ) {
+    this.internalAppointmentForm = this.formBuilder.group({
+      clientId: ['', Validators.required],
+      professionalId: [''],
+      date: ['', Validators.required],
+      timeSlot: ['', Validators.required],
+      notes: [''],
+      durationMinutes: [0, Validators.required],
+    });
 
-  ngOnInit(): void {
-    // Validate that we have a professional ID - try data first, then fallback to user context
-    const professionalId = this.data?.professionalId || this._userContextService.getCurrentProfessionalId();
-    
-    if (!professionalId) {
-      console.error('No professionalId provided to the dialog and no professional found in user context');
-      this.error = 'Unable to load appointment form. Professional ID is missing.';
-      return;
-    }
+    this.externalAppointmentForm = this.formBuilder.group({
+      externalClientId: [''],
+      professionalId: [''],
+      date: ['', Validators.required],
+      timeSlot: ['', Validators.required],
+      notes: [''],
+      durationMinutes: [30],
+    });
 
-    // Ensure the data object has the professional ID
-    if (!this.data) {
-      this.data = {};
-    }
-    this.data.professionalId = professionalId;
+    this.newClientForm = this.formBuilder.group({
+      name: ['', Validators.required],
+      lastName: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      phone: ['', Validators.required],
+    });
+  }
 
-    console.log('Dialog initialized with professionalId:', professionalId);
+  appointmentType: 'internal' | 'external' = 'internal';
+  createNewClient = false;
 
-    this.initializeForm();
-    this.loadClients();
+  internalAppointmentForm: FormGroup;
+  externalAppointmentForm: FormGroup;
+  newClientForm: FormGroup;
+
+  async ngOnInit() {
+    await this.loadAllClients();
     this.setupClientSearch();
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  private initializeForm(): void {
-    this.appointmentForm = this.fb.group({
-      isExternal: [false],
-      selectedClientId: [null],
-      searchEmail: [''],
-      externalName: ['', [Validators.required]],
-      externalLastName: ['', [Validators.required]],
-      externalEmail: ['', [Validators.required, Validators.email]],
-      externalPhone: ['', [Validators.required]],
-      date: [null, Validators.required],
-      selectedTimeSlot: [null, Validators.required],
-      reason: [''],
-    });
-
-    this.appointmentForm.get('isExternal')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(isExternal => this.updateValidators(isExternal));
-
-    this.appointmentForm.get('date')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(date => {
-        if (date) {
-          this.loadAvailableTimeSlots(date);
-        } else {
-          this.availableTimeSlots = [];
-          this.selectedTimeSlot = null;
-        }
-      });
-  }
-
-  private updateValidators(isExternal: boolean): void {
-    const externalFields = ['externalName', 'externalLastName', 'externalEmail', 'externalPhone'];
-    
-    externalFields.forEach(field => {
-      const control = this.appointmentForm.get(field);
-      if (control) {
-        if (isExternal) {
-          control.setValidators([Validators.required, ...(field === 'externalEmail' ? [Validators.email] : [])]);
-        } else {
-          control.clearValidators();
-        }
-        control.updateValueAndValidity();
+  async loadAllClients() {
+    try {
+      const professionalId = this.userContextService.getCurrentProfessionalId();
+      if (!professionalId) {
+        console.error('No professional ID found');
+        return;
       }
-    });
-  }
 
-  private setupClientSearch(): void {
-    this.clientSearchControl.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((value) => {
-        const filter = value?.toLowerCase() ?? '';
-        this.filteredClients = this.registeredClients.filter((c) =>
-          (c.name + ' ' + c.lastName + ' ' + c.email)
-            .toLowerCase()
-            .includes(filter)
+      // Cargar todos los clientes del profesional
+      const allClients = await firstValueFrom(this.professionalService.getAllClients());
+      
+      console.log('Raw clients response:', allClients);
+      
+      if (Array.isArray(allClients)) {
+        console.log('All clients received:', allClients.map(c => ({ 
+          name: c.name, 
+          lastName: c.lastName, 
+          email: c.email, 
+          clientType: c.clientType 
+        })));
+        
+        // Separar clientes por tipo (case-insensitive)
+        this.internalClients = allClients.filter(client => 
+          client.clientType?.toLowerCase() === 'internal'
         );
-      });
-  }
+        this.externalClients = allClients.filter(client => 
+          client.clientType?.toLowerCase() === 'external'
+        );
+        
+        // Mostrar 5 clientes al azar inicialmente
+        this.filteredInternalClients = this.getRandomClients(this.internalClients, 5);
+        this.filteredExternalClients = this.getRandomClients(this.externalClients, 5);
 
-  async onSubmit(): Promise<void> {
-    if (this.appointmentForm.invalid) {
-      this.markFormGroupTouched();
-      return;
-    }
-
-    this.isLoading = true;
-    this.error = null;
-
-    try {
-      const values = this.appointmentForm.value;
-      const appointment = await this.createAppointment(values);
-      this.dialogRef.close(appointment);
-    } catch (error: any) {
-      this.handleError(error);
-    } finally {
-      this.isLoading = false;
-    }
-  }
-
-  private async createAppointment(values: any): Promise<any> {
-    if (!values.selectedTimeSlot) {
-      throw new Error('Please select an available time slot.');
-    }
-
-    const professionalId = this.professionalId;
-    if (!professionalId) {
-      throw new Error('Professional ID is missing.');
-    }
-
-    // Crear el DateTime completo combinando la fecha seleccionada con la hora del slot
-    const appointmentDateTime = this.createAppointmentDateTime(values.date, values.selectedTimeSlot.startTime);
-    
-    console.log('Selected date:', values.date);
-    console.log('Selected time slot start time:', values.selectedTimeSlot.startTime);
-    console.log('Combined appointment DateTime:', appointmentDateTime);
-    
-    const basePayload = {
-      professionalId: professionalId,
-      date: appointmentDateTime, // DateTime en formato ISO compatible con .NET
-      durationMinutes: this.calculateDurationMinutes(values.selectedTimeSlot.startTime, values.selectedTimeSlot.endTime),
-      reason: values.reason || null,
-      timeSlotId: values.selectedTimeSlot.id, // Incluir el ID del slot
-    };
-
-    console.log('Creating appointment with payload:', basePayload);
-
-    console.log('Creating appointment with payload:', basePayload);
-
-    if (values.isExternal) {
-      return await this.createExternalAppointmentFlow(basePayload, values);
-    } else {
-      return await this.createInternalAppointmentFlow(basePayload);
-    }
-  }
-
-  private calculateDurationMinutes(startTime: string, endTime: string): number {
-    const [startHours, startMinutes] = startTime.split(':').map(Number);
-    const [endHours, endMinutes] = endTime.split(':').map(Number);
-    
-    const startTotalMinutes = startHours * 60 + startMinutes;
-    const endTotalMinutes = endHours * 60 + endMinutes;
-    
-    return endTotalMinutes - startTotalMinutes;
-  }
-
-  // Método alternativo para crear DateTime sin zona horaria (si tu backend lo prefiere)
-  private createAppointmentDateTimeLocal(date: string, startTime: string): string {
-    // Parsear la fecha como string para evitar problemas de zona horaria
-    const dateParts = date.split('-');
-    const year = parseInt(dateParts[0], 10);
-    const month = parseInt(dateParts[1], 10) - 1; // Month is 0-indexed
-    const day = parseInt(dateParts[2], 10);
-    
-    const [hours, minutes] = startTime.split(':').map(Number);
-    
-    // Crear fecha usando el constructor con parámetros individuales
-    const selectedDate = new Date(year, month, day, hours, minutes, 0, 0);
-    
-    // Formato local sin zona horaria: "2025-07-18T14:30:00"
-    const yearStr = selectedDate.getFullYear();
-    const monthStr = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const dayStr = String(selectedDate.getDate()).padStart(2, '0');
-    const hourStr = String(selectedDate.getHours()).padStart(2, '0');
-    const minuteStr = String(selectedDate.getMinutes()).padStart(2, '0');
-    const secondStr = String(selectedDate.getSeconds()).padStart(2, '0');
-    
-    return `${yearStr}-${monthStr}-${dayStr}T${hourStr}:${minuteStr}:${secondStr}`;
-  }
-
-  private async loadAvailableTimeSlots(date: string): Promise<void> {
-    console.log('Loading available time slots for date:', date);
-    console.log('Professional ID:', this.data?.professionalId);
-    
-    if (!this.data?.professionalId) {
-      console.error('No professionalId available');
-      this.error = 'Unable to load time slots. Professional ID is missing.';
-      return;
-    }
-
-    this.isLoadingSlots = true;
-    this.availableTimeSlots = [];
-    this.selectedTimeSlot = null;
-    this.appointmentForm.patchValue({ selectedTimeSlot: null });
-
-    try {
-      // Se obtienen los slots disponibles usando el servicio de TimeSlotsService
-      const slots: TimeSlot[] = await firstValueFrom(
-        this._timeSlotsService.getAvailableTimeSlots(this.data.professionalId, date)
-      );
-      console.log('Available time slots loaded:', slots);
-      
-      this.availableTimeSlots = slots;
-      
-      if (this.availableTimeSlots.length === 0) {
-        this.error = 'No available time slots for the selected date.';
-        setTimeout(() => {
-          this.error = null;
-        }, 3000);
+        console.log('Internal clients loaded:', this.internalClients.length);
+        console.log('External clients loaded:', this.externalClients.length);
+        console.log('External clients:', this.externalClients);
+      } else {
+        console.error('Invalid response format for clients');
       }
+
     } catch (error) {
-      console.error('Error loading available time slots:', error);
-      this.error = 'Unable to load available time slots. Please try again.';
-      setTimeout(() => {
-        this.error = null;
-      }, 3000);
-    } finally {
-      this.isLoadingSlots = false;
+      console.error('Error loading clients:', error);
     }
   }
 
-  private async createExternalAppointmentFlow(basePayload: any, values: any): Promise<any> {
-    const clientData: CreateExternalClient = {
-      name: values.externalName,
-      email: values.externalEmail,
-      phone: values.externalPhone,
-      lastName: values.externalLastName,
-    };
+  setupClientSearch() {
+    // Configurar búsqueda para clientes internos
+    this.internalAppointmentForm.get('clientId')?.valueChanges.subscribe(searchTerm => {
+      this.filterInternalClients(searchTerm);
+    });
 
-    const client = await this.createExternalClient(clientData);
-    const payload: CreateExternalAppointment = {
-      ...basePayload,
-      externalClientId: client.id,
-    };
+    // Configurar búsqueda para clientes externos
+    this.externalAppointmentForm.get('externalClientId')?.valueChanges.subscribe(searchTerm => {
+      this.filterExternalClients(searchTerm);
+    });
 
-    await this.createExternalAppointment(payload);
-    return payload;
-  }
+    // Configurar carga de time slots cuando cambia la fecha interna
+    this.internalAppointmentForm.get('date')?.valueChanges.subscribe(date => {
+      if (date) {
+        this.loadTimeSlotsForDate(date);
+      } else {
+        this.availableTimeSlots = [];
+        this.selectedTimeSlot = null;
+      }
+    });
 
-  private async createInternalAppointmentFlow(basePayload: any): Promise<any> {
-    if (!this.foundClient?.id) {
-      throw new Error('Please select a client before creating the appointment.');
-    }
-
-    if (this.foundClient.clientType?.toLowerCase() === 'external') {
-      const payload: CreateExternalAppointment = {
-        ...basePayload,
-        externalClientId: this.foundClient.id,
-      };
-      await this.createExternalAppointment(payload);
-      return payload;
-    } else {
-      const payload: CreateInternalAppointment = {
-        ...basePayload,
-        clientId: this.foundClient.id,
-      };
-      await this.createInternalAppointment(payload);
-      return payload;
-    }
-  }
-
-  private markFormGroupTouched(): void {
-    Object.keys(this.appointmentForm.controls).forEach(key => {
-      const control = this.appointmentForm.get(key);
-      control?.markAsTouched();
+    // Configurar carga de time slots cuando cambia la fecha externa
+    this.externalAppointmentForm.get('date')?.valueChanges.subscribe(date => {
+      if (date) {
+        this.loadTimeSlotsForDate(date);
+      } else {
+        this.availableTimeSlots = [];
+        this.selectedTimeSlot = null;
+      }
     });
   }
 
-  private handleError(error: any): void {
-    console.error('Error during appointment submission:', error);
-    this.error = error.message || 'An error occurred while creating the appointment. Please try again.';
+  filterInternalClients(searchTerm: string) {
+    // Limpiar cliente seleccionado si el usuario está escribiendo manualmente
+    if (searchTerm && searchTerm.trim() !== '' && this.selectedInternalClientId) {
+      // Verificar si el texto coincide exactamente con el cliente seleccionado
+      const selectedClient = this.internalClients.find(c => c.id === this.selectedInternalClientId);
+      if (selectedClient) {
+        const expectedText = `${selectedClient.name} ${selectedClient.lastName} (${selectedClient.email})`;
+        if (searchTerm !== expectedText) {
+          // El usuario está escribiendo algo diferente, limpiar la selección
+          this.selectedInternalClientId = null;
+        }
+      }
+    }
     
+    if (!searchTerm || searchTerm.trim() === '') {
+      // Si no hay término de búsqueda, mostrar 5 clientes al azar
+      this.filteredInternalClients = this.getRandomClients(this.internalClients, 5);
+      return;
+    }
+
+    const term = searchTerm.toLowerCase();
+    this.filteredInternalClients = this.internalClients.filter(client => {
+      const fullName = `${client.name} ${client.lastName}`.toLowerCase();
+      return fullName.includes(term) || client.email.toLowerCase().includes(term);
+    });
+  }
+
+  filterExternalClients(searchTerm: string) {
+    console.log('Filtering external clients with term:', searchTerm);
+    console.log('Available external clients:', this.externalClients);
+    
+    // Limpiar cliente seleccionado si el usuario está escribiendo manualmente
+    if (searchTerm && searchTerm.trim() !== '' && this.selectedExternalClientId) {
+      // Verificar si el texto coincide exactamente con el cliente seleccionado
+      const selectedClient = this.externalClients.find(c => c.id === this.selectedExternalClientId);
+      if (selectedClient) {
+        const expectedText = `${selectedClient.name} ${selectedClient.lastName} (${selectedClient.email})`;
+        if (searchTerm !== expectedText) {
+          // El usuario está escribiendo algo diferente, limpiar la selección
+          this.selectedExternalClientId = null;
+          console.log('Cleared external client selection due to manual typing');
+        }
+      }
+    }
+    
+    if (!searchTerm || searchTerm.trim() === '') {
+      // Si no hay término de búsqueda, mostrar 5 clientes al azar
+      this.filteredExternalClients = this.getRandomClients(this.externalClients, 5);
+      console.log('No search term, showing random clients:', this.filteredExternalClients);
+      return;
+    }
+
+    const term = searchTerm.toLowerCase();
+    this.filteredExternalClients = this.externalClients.filter(client => {
+      const fullName = `${client.name} ${client.lastName}`.toLowerCase();
+      const nameMatch = fullName.includes(term);
+      const emailMatch = client.email.toLowerCase().includes(term);
+      
+      console.log(`Checking client ${fullName} (${client.email}):`, 
+        `nameMatch: ${nameMatch}, emailMatch: ${emailMatch}`);
+      
+      return nameMatch || emailMatch;
+    });
+    
+    console.log('Filtered external clients:', this.filteredExternalClients);
+  }
+
+  getRandomClients(clients: ClientGeneric[], count: number): ClientGeneric[] {
+    if (!clients || clients.length === 0) return [];
+    if (clients.length <= count) return [...clients];
+    
+    const shuffled = [...clients].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  }
+
+  selectInternalClient(client: ClientGeneric) {
+    this.internalAppointmentForm.patchValue({
+      clientId: `${client.name} ${client.lastName} (${client.email})`
+    });
+    // Guardar el ID del cliente seleccionado en una propiedad separada
+    this.selectedInternalClientId = client.id;
+    this.filteredInternalClients = []; // Ocultar lista después de seleccionar
+    this.internalSearchFocused = false; // Ocultar dropdown
+  }
+
+  selectExternalClient(client: ClientGeneric) {
+    this.externalAppointmentForm.patchValue({
+      externalClientId: `${client.name} ${client.lastName} (${client.email})`
+    });
+    // Guardar el ID del cliente seleccionado en una propiedad separada
+    this.selectedExternalClientId = client.id;
+    this.filteredExternalClients = []; // Ocultar lista después de seleccionar
+    this.externalSearchFocused = false; // Ocultar dropdown
+  }
+
+  // Método para mostrar sugerencias al hacer focus en el input
+  onFocusInternalSearch() {
+    this.internalSearchFocused = true;
+    const currentValue = this.internalAppointmentForm.get('clientId')?.value;
+    
+    if (!currentValue) {
+      // Si el campo está vacío, limpiar cualquier selección previa
+      this.selectedInternalClientId = null;
+      this.filteredInternalClients = this.getRandomClients(this.internalClients, 5);
+    }
+  }
+
+  onFocusExternalSearch() {
+    this.externalSearchFocused = true;
+    const currentValue = this.externalAppointmentForm.get('externalClientId')?.value;
+    
+    console.log('Focus on external search');
+    console.log('Current external form value:', currentValue);
+    console.log('Available external clients:', this.externalClients.length);
+    
+    if (!currentValue) {
+      // Si el campo está vacío, limpiar cualquier selección previa
+      this.selectedExternalClientId = null;
+      this.filteredExternalClients = this.getRandomClients(this.externalClients, 5);
+      console.log('Showing random external clients on focus:', this.filteredExternalClients);
+    }
+  }
+
+  // Método para ocultar sugerencias al perder focus (con delay para permitir clicks)
+  onBlurInternalSearch() {
     setTimeout(() => {
-      this.error = null;
+      this.internalSearchFocused = false;
+      this.filteredInternalClients = [];
+    }, 200);
+  }
+
+  onBlurExternalSearch() {
+    setTimeout(() => {
+      this.externalSearchFocused = false;
+      this.filteredExternalClients = [];
+    }, 200);
+  }
+
+  async loadTimeSlotsForDate(date: string) {
+    try {
+      this.loadingTimeSlots = true;
+      this.availableTimeSlots = [];
+      this.selectedTimeSlot = null;
+
+      const professionalId = this.userContextService.getCurrentProfessionalId();
+      if (!professionalId) {
+        console.error('No professional ID found');
+        return;
+      }
+
+      const timeSlots = await firstValueFrom(
+        this.timeSlotsService.getAvailableTimeSlots(professionalId, date)
+      );
+
+      this.availableTimeSlots = Array.isArray(timeSlots) ? timeSlots : [];
+      console.log('Time slots loaded for date', date, ':', this.availableTimeSlots.length);
+
+    } catch (error) {
+      console.error('Error loading time slots:', error);
+      this.availableTimeSlots = [];
+    } finally {
+      this.loadingTimeSlots = false;
+    }
+  }
+
+  selectTimeSlot(timeSlot: TimeSlot) {
+    this.selectedTimeSlot = timeSlot;
+    
+    // Actualizar el formulario correspondiente según el tipo de appointment
+    if (this.appointmentType === 'internal') {
+      this.internalAppointmentForm.patchValue({
+        timeSlot: timeSlot.id
+      });
+    } else {
+      this.externalAppointmentForm.patchValue({
+        timeSlot: timeSlot.id
+      });
+    }
+    
+    console.log('Time slot selected:', timeSlot);
+  }
+
+  formatTimeSlot(timeSlot: TimeSlot): string {
+    return `${timeSlot.startTime} - ${timeSlot.endTime}`;
+  }
+
+  calculateDuration(startTime: string, endTime: string): number {
+    const start = new Date(`2000-01-01T${startTime}`);
+    const end = new Date(`2000-01-01T${endTime}`);
+    return Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+  }
+
+  // Función para formatear fecha + timeSlot a DateTime de .NET (ISO 8601)
+  formatDateTimeForDotNet(dateString: string, timeSlot: TimeSlot): string {
+    if (!dateString || !timeSlot) return '';
+    
+    console.log('Formatting date time with:', { dateString, timeSlot });
+    
+    try {
+      // Asegurar que startTime tenga el formato correcto HH:mm
+      let timeString = timeSlot.startTime;
+      
+      // Si el tiempo no incluye segundos, agregarlos
+      if (timeString && timeString.split(':').length === 2) {
+        timeString = `${timeString}:00`;
+      }
+      
+      // Combinar fecha (YYYY-MM-DD) con la hora del time slot (HH:mm:ss)
+      const dateTime = `${dateString}T${timeString}`;
+      
+      console.log('Combined dateTime string:', dateTime);
+      
+      // Crear objeto Date y formatear manualmente para evitar conversión de zona horaria
+      const date = new Date(dateTime);
+      
+      // Verificar si la fecha es válida
+      if (isNaN(date.getTime())) {
+        console.error('Invalid date created:', dateTime);
+        throw new Error(`Invalid date format: ${dateTime}`);
+      }
+      
+      // Formatear manualmente para mantener la hora local (sin conversión UTC)
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      
+      // Formato ISO pero sin conversión UTC
+      const localISOString = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+      
+      console.log('Local ISO string (no UTC conversion):', localISOString);
+      
+      return localISOString;
+    } catch (error) {
+      console.error('Error formatting date time:', error);
+      console.error('Input values:', { dateString, timeSlot });
+      throw error;
+    }
+  }
+
+  // Método para mostrar mensajes de error
+  showErrorMessage(message: string) {
+    this.errorMessage = message;
+    this.showError = true;
+    
+    // Ocultar el error después de 5 segundos
+    setTimeout(() => {
+      this.showError = false;
+      this.errorMessage = '';
     }, 5000);
   }
 
-
-  private async createExternalClient(payload: CreateExternalClient): Promise<CreateExternalClientResponse> {
-    try {
-      const res = await firstValueFrom(this._externalClientService.createExternalClient(payload));
-      if (!res?.id) {
-        throw new Error('External client was not created correctly.');
-      }
-      return res;
-    } catch (err) {
-      console.error('Error creating external client:', err);
-      throw new Error('Error creating external client.');
+  // Método para validar formulario interno
+  validateInternalForm(): boolean {
+    if (!this.selectedInternalClientId) {
+      this.showErrorMessage('Please select a client');
+      return false;
     }
+    
+    if (!this.internalAppointmentForm.get('date')?.value) {
+      this.showErrorMessage('Please select an appointment date');
+      return false;
+    }
+    
+    if (!this.selectedTimeSlot) {
+      this.showErrorMessage('Please select a time slot');
+      return false;
+    }
+    
+    return true;
   }
 
-  private async createExternalAppointment(payload: CreateExternalAppointment): Promise<void> {
-    try {
-      await firstValueFrom(this._externalAppointmentService.createExternalAppointment(payload));
-      console.log('External appointment created successfully');
-    } catch (err) {
-      console.error('Error creating external appointment:', err);
-      throw new Error('Unable to create external appointment.');
+  // Método para validar formulario externo
+  validateExternalForm(): boolean {
+    if (!this.externalAppointmentForm.get('date')?.value) {
+      this.showErrorMessage('Please select an appointment date');
+      return false;
     }
-  }
-
-  private async createInternalAppointment(payload: CreateInternalAppointment): Promise<void> {
-    try {
-      await firstValueFrom(this._internalAppointmentService.createInternalAppointment(payload));
-      console.log('Internal appointment created successfully');
-    } catch (err) {
-      console.error('Error creating internal appointment:', err);
-      throw new Error('Unable to create internal appointment.');
+    
+    if (!this.selectedTimeSlot) {
+      this.showErrorMessage('Please select a time slot');
+      return false;
     }
-  }
-
-  private loadClients(): void {
-    this._professionalService.getAllClients()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (clients) => {
-          this.registeredClients = clients;
-          this.filteredClients = [...clients];
-        },
-        error: (error) => {
-          console.error('Error loading clients:', error);
-          this.error = 'Unable to load clients. Please try again.';
+    
+    if (this.createNewClient) {
+      if (!this.newClientForm.valid) {
+        if (!this.newClientForm.get('name')?.value) {
+          this.showErrorMessage('Client name is required');
+          return false;
         }
-      });
-  }
-
-  selectClient(client: ClientGeneric): void {
-    this.foundClient = client;
-    this.appointmentForm.patchValue({
-      selectedClientId: client.id,
-    });
-    this.clientSearchControl.setValue(
-      `${client.name} ${client.lastName} (${client.email})`,
-      { emitEvent: false }
-    );
-    this.showSuggestions = false;
-  }
-
-  hideSuggestions(): void {
-    setTimeout(() => (this.showSuggestions = false), 150);
-  }
-
-  setClientType(isExternal: boolean): void {
-    this.appointmentForm.patchValue({
-      isExternal: isExternal,
-      selectedClientId: null,
-      externalName: '',
-      externalLastName: '',
-      externalEmail: '',
-      externalPhone: '',
-    });
-    this.foundClient = null;
-    this.searchFailed = false;
-    this.clientSearchControl.setValue('');
-    this.showSuggestions = false;
-  }
-
-  selectTimeSlot(timeSlot: any): void {
-    this.selectedTimeSlot = timeSlot;
-    this.appointmentForm.patchValue({
-      selectedTimeSlot: timeSlot
-    });
-  }
-
-  onCancel(): void {
-    this.dialogRef.close();
-  }
-
-  // Helper methods for template
-  get isExternalClient(): boolean {
-    return this.appointmentForm.get('isExternal')?.value ?? false;
-  }
-
-  get isFormValid(): boolean {
-    return this.appointmentForm.valid && 
-           (!this.isExternalClient ? !!this.foundClient : true) &&
-           !!this.selectedTimeSlot;
-  }
-
-  getFieldError(fieldName: string): string | null {
-    const field = this.appointmentForm.get(fieldName);
-    if (field?.errors && field.touched) {
-      if (field.errors['required']) return `${fieldName} is required`;
-      if (field.errors['email']) return 'Please enter a valid email';
+        if (!this.newClientForm.get('lastName')?.value) {
+          this.showErrorMessage('Client last name is required');
+          return false;
+        }
+        if (!this.newClientForm.get('email')?.value) {
+          this.showErrorMessage('Client email is required');
+          return false;
+        }
+        if (!this.newClientForm.get('phone')?.value) {
+          this.showErrorMessage('Client phone is required');
+          return false;
+        }
+        this.showErrorMessage('Please fill in all required client information');
+        return false;
+      }
+    } else {
+      if (!this.selectedExternalClientId) {
+        this.showErrorMessage('Please select an existing client');
+        return false;
+      }
     }
-    return null;
-  }
-
-  // Esta funcion formatea el time slot para mostrarlo en el formato "HH:MM AM/PM - HH:MM AM/PM" en el HTML
-formatTimeSlot(timeSlot: TimeSlot): string {
-  if (!timeSlot?.startTime || !timeSlot?.endTime) return '';
-
-  const today = new Date().toISOString().split('T')[0];
-
-  const startDate = new Date(`${today}T${timeSlot.startTime}`);
-  const endDate = new Date(`${today}T${timeSlot.endTime}`);
-
-  const startTime = startDate.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  });
-
-  const endTime = endDate.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true,
-  });
-
-  return `${startTime} - ${endTime}`;
-}
-
-
-  // Helper method to get minimum date (today)
-  get minDate(): string {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  }
-
-  // Helper method to get the current professional ID
-  get professionalId(): string | null {
-    return this.data?.professionalId || this._userContextService.getCurrentProfessionalId();
-  }
-  private readonly USE_LOCAL_DATETIME = true;
-
-  // Método principal para crear DateTime - usa la configuración para elegir formato
-  private createAppointmentDateTime(date: string, startTime: string): string {
-    return this.USE_LOCAL_DATETIME 
-      ? this.createAppointmentDateTimeLocal(date, startTime)
-      : this.createAppointmentDateTimeISO(date, startTime);
-  }
-
-  // Método para crear DateTime en formato ISO (con zona horaria)
-  private createAppointmentDateTimeISO(date: string, startTime: string): string {
-    // Parsear la fecha como string para evitar problemas de zona horaria
-    const dateParts = date.split('-');
-    const year = parseInt(dateParts[0], 10);
-    const month = parseInt(dateParts[1], 10) - 1;
-    const day = parseInt(dateParts[2], 10);
     
-    const [hours, minutes] = startTime.split(':').map(Number);
-    
-    // Crear fecha usando el constructor con parámetros individuales
-    const selectedDate = new Date(year, month, day, hours, minutes, 0, 0);
-    
-    const isoString = selectedDate.toISOString();
-    
-    return isoString;
+    return true;
   }
+
+  async onSubmitExternalAppointment() {
+    console.log('Submitting external appointment with createNewClient:', this.createNewClient);
+    console.log('External appointment form values:', this.externalAppointmentForm.value);
+    console.log('Selected time slot:', this.selectedTimeSlot);
+    
+    // Validar formulario
+    if (!this.validateExternalForm()) {
+      return;
+    }
+    
+    if (this.createNewClient) {
+      // Caso 1: Crear cliente nuevo + appointment
+      await this.createClientAndAppointment();
+    } else {
+      console.log('Creating appointment with existing external client'
+        + this.externalAppointmentForm.value.externalClientId
+      );
+      
+      await this.createAppointmentWithExistingExternalClient();
+    }
+  }
+
+  async createClientAndAppointment() {
+    try {
+      // Validar formularios - la validación ya se hizo en onSubmitExternalAppointment
+      const professionalId = this.userContextService.getCurrentProfessionalId();
+      if (!professionalId) {
+        this.showErrorMessage('Professional ID not found. Please log in again.');
+        return;
+      }
+
+      const clientData: CreateExternalClient = {
+        name: this.newClientForm.value.name,
+        lastName: this.newClientForm.value.lastName,
+        email: this.newClientForm.value.email,
+        phone: this.newClientForm.value.phone,
+        createdByProfessionalId: professionalId
+      };
+
+      const createdClient: CreateExternalClientResponse = await firstValueFrom(
+        this.externalClientService.createExternalClient(clientData)
+      );
+
+      // Crear el appointment con el ID del cliente creado y el time slot seleccionado
+      const appointmentData: CreateExternalAppointment = {
+        externalClientId: createdClient.id,
+        professionalId: professionalId,
+        date: this.formatDateTimeForDotNet(this.externalAppointmentForm.value.date, this.selectedTimeSlot!),
+        timeSlotId: this.selectedTimeSlot!.id,
+        reason: this.externalAppointmentForm.value.notes,
+        durationMinutes: this.calculateDuration(this.selectedTimeSlot!.startTime, this.selectedTimeSlot!.endTime)
+      };
+
+      await firstValueFrom(
+        this.externalAppointmentService.createExternalAppointment(appointmentData)
+      );
+
+      console.log('Cliente y appointment creados exitosamente');
+      this.dialogRef.close({ success: true, type: 'external-new-client' });
+
+    } catch (error: any) {
+      console.error('Error creating client and appointment:', error);
+      const errorMsg = error?.error?.message || error?.message || 'Error creating appointment. Please try again.';
+      this.showErrorMessage(errorMsg);
+    }
+  }
+
+  async createAppointmentWithExistingExternalClient() {
+    try {
+      const professionalId = this.userContextService.getCurrentProfessionalId();
+      if (!professionalId) {
+        this.showErrorMessage('Professional ID not found. Please log in again.');
+        return;
+      }
+
+      console.log('Creating appointment with data:', {
+        date: this.externalAppointmentForm.value.date,
+        selectedTimeSlot: this.selectedTimeSlot,
+        externalClientId: this.selectedExternalClientId
+      });
+
+      const appointmentData: CreateExternalAppointment = {
+        externalClientId: this.selectedExternalClientId!,
+        professionalId: professionalId,
+        date: this.formatDateTimeForDotNet(this.externalAppointmentForm.value.date, this.selectedTimeSlot!),
+        timeSlotId: this.selectedTimeSlot!.id,
+        reason: this.externalAppointmentForm.value.notes,
+        durationMinutes: this.calculateDuration(this.selectedTimeSlot!.startTime, this.selectedTimeSlot!.endTime)
+      };
+
+      await firstValueFrom(
+        this.externalAppointmentService.createExternalAppointment(appointmentData)
+      );
+
+      console.log('Appointment con cliente existente creado exitosamente');
+      this.dialogRef.close({ success: true, type: 'external-existing-client' });
+
+    } catch (error: any) {
+      console.error('Error creating appointment with existing client:', error);
+      const errorMsg = error?.error?.message || error?.message || 'Error creating appointment. Please try again.';
+      this.showErrorMessage(errorMsg);
+    }
+  }
+
+  async onSubmitInternalAppointment() {
+    try {
+      // Validar formulario
+      if (!this.validateInternalForm()) {
+        return;
+      }
+
+      const professionalId = this.userContextService.getCurrentProfessionalId();
+      if (!professionalId) {
+        this.showErrorMessage('Professional ID not found. Please log in again.');
+        return;
+      }
+
+      const appointmentData: CreateInternalAppointment = {
+        clientId: this.selectedInternalClientId!,
+        professionalId: professionalId,
+        date: this.formatDateTimeForDotNet(this.internalAppointmentForm.value.date, this.selectedTimeSlot!),
+        timeSlotId: this.selectedTimeSlot!.id,
+        reason: this.internalAppointmentForm.value.notes,
+        durationMinutes: this.calculateDuration(this.selectedTimeSlot!.startTime, this.selectedTimeSlot!.endTime)
+      };
+
+      await firstValueFrom(
+        this.internalAppointmentService.createInternalAppointment(appointmentData)
+      );
+
+      console.log('Internal appointment creado exitosamente');
+      this.dialogRef.close({ success: true, type: 'internal' });
+
+    } catch (error: any) {
+      console.error('Error creating internal appointment:', error);
+      const errorMsg = error?.error?.message || error?.message || 'Error creating appointment. Please try again.';
+      this.showErrorMessage(errorMsg);
+    }
+  }
+
 }
